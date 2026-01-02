@@ -427,16 +427,16 @@ file: [이미지 파일]
 ## 보안 및 최적화
 
 ### 보안 기능
-- ✅ 파일 업로드 크기 제한 (16MB)
-- ✅ MIME 타입 검증 (이미지만 허용)
-- ✅ 입력 데이터 검증
-- ✅ 에러 처리 및 로깅
+- 파일 업로드 크기 제한 (16MB)
+- MIME 타입 검증 (이미지만 허용)
+-  입력 데이터 검증
+- 에러 처리 및 로깅
 
 ### 성능 최적화
-- ✅ opencv-python-headless (서버 최적화)
-- ✅ MediaPipe GPU 가속 지원
-- ✅ Gunicorn 멀티 워커
-- ✅ 이미지 캐싱 (브라우저)
+- opencv-python-headless (서버 최적화)
+- MediaPipe GPU 가속 지원
+- Gunicorn 멀티 워커
+- 이미지 캐싱 (브라우저)
 
 ### 환경 변수
 
@@ -450,7 +450,7 @@ MAX_CONTENT_LENGTH=16777216  # 16MB
 
 
 
-## 🛠️ 문제 해결
+## 문제 해결
 
 ### 얼굴이 감지되지 않음
 - 조명 확인 (너무 어둡거나 밝지 않게)
@@ -478,7 +478,7 @@ curl -L "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_la
 docker build --no-cache -t willis-facemap .
 ```
 
-## 📝 기여 가이드
+## 기여 가이드
 
 ### 버그 리포트
 GitHub Issues에 다음 정보와 함께 제출:
@@ -495,7 +495,7 @@ GitHub Issues에 다음 정보와 함께 제출:
 
 
 
-## 📚 기술 스택
+##  기술 스택
 
 - **Backend**: Python 3.11+, Flask 3.0+
 - **Computer Vision**: MediaPipe 0.10+, OpenCV (headless)
@@ -503,20 +503,20 @@ GitHub Issues에 다음 정보와 함께 제출:
 - **Deployment**: Docker, Gunicorn, Render.com
 - **Version Control**: Git, GitHub
 
-## 🎓 학습 리소스
+## 학습 리소스
 
 - [MediaPipe Face Mesh 문서](https://google.github.io/mediapipe/solutions/face_mesh.html)
 - [Flask 공식 문서](https://flask.palletsprojects.com/)
 - [프로젝트 아키텍처 설명](docs/ARCHITECTURE.md)
 - [리팩토링 로그](REFACTORING.md)
 
-## 📄 라이선스
+## 라이선스
 
 MIT License - 교육 및 연구 목적으로 자유롭게 사용 가능
 
-⚠️ **의료 면책**: 이 프로그램은 진단 보조 도구입니다. 최종 진단은 반드시 치과 전문의가 수행해야 합니다.
+**의료 면책**: 이 프로그램은 진단 보조 도구입니다. 최종 진단은 반드시 치과 전문의가 수행해야 합니다.
 
 ---
 
-**Made with ❤️ for Dental Care**  
+**Made with for Dental Care**  
 GitHub: [@mlnyx](https://github.com/mlnyx) | Website: [willis-facemap.onrender.com](https://willis-facemap.onrender.com)
