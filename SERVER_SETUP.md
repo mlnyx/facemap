@@ -42,13 +42,17 @@ Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/lates
 ### 4단계: 서버 시작!
 
 ```powershell
-# 방법 1: 배치 파일 실행 (가장 쉬움)
+# 방법 1: 자동 업데이트 모드 (추천! ⭐)
+.\start_auto_update.bat
+# GitHub 변경사항을 30초마다 자동 확인!
+
+# 방법 2: 일반 모드
 .\start_tunnel.bat
 
-# 방법 2: PowerShell 스크립트
+# 방법 3: PowerShell 스크립트
 .\start_tunnel.ps1
 
-# 방법 3: 수동 실행
+# 방법 4: 수동 실행
 # 터미널 1
 python run.py
 
@@ -69,6 +73,26 @@ https://random-name.trycloudflare.com
 ---
 
 ## 🔄 업데이트 방법
+
+### 방법 1: 자동 업데이트 (추천! ⭐)
+
+**한 번만 설정하면 끝!**
+
+```powershell
+# 자동 업데이트 모드로 시작
+.\start_auto_update.bat
+```
+
+이제 개발 컴퓨터에서:
+```bash
+git add .
+git commit -m "기능 추가"
+git push origin main
+```
+
+**30초 이내 자동 감지** → 알림 → 재시작하라고 메시지 표시!
+
+### 방법 2: 수동 업데이트
 
 코드가 업데이트되면:
 
@@ -286,9 +310,36 @@ C:\Server\facemap\
 | AWS/GCP | 안정적 | 복잡, 비용 |
 | 포트 포워딩 | 직접 제어 | 보안 위험, 공인 IP 필요 |
 
-**결론**: 24시간 컴퓨터가 있다면 Cloudflare Tunnel이 최고!
+**결🔄 자동 업데이트 동작 방식
 
----
+개발 워크플로우:
+
+```
+[개발 컴퓨터]                    [24시간 서버]
+    |                                |
+코드 수정                        자동 감시 중
+    |                                |
+git push ──────────────────>     변경 감지 (30초 이내)
+                                     |
+                                 git pull 자동 실행
+                                     |
+                                 알림 표시
+                                     |
+                              (수동으로 재시작)
+```
+
+**완전 자동**은 아니지만, **거의 자동**입니다!
+- 감지: 자동 ✅
+- 다운로드: 자동 ✅
+- 재시작: 수동 (알림만 받고 Ctrl+C → 재실행)
+
+### 왜 완전 자동이 아닌가요?
+
+안전을 위해서입니다:
+- 잘못된 코드가 자동 배포되면 서비스 중단
+- 재시작 타이밍을 사용자가 컨트롤
+
+원한다면 `auto_update.py`를 수정해서 완전 자동화도 가능합니다!
 
 ## 🎯 체크리스트
 
@@ -297,7 +348,12 @@ C:\Server\facemap\
 - [ ] Git 클론 완료
 - [ ] Python 가상환경 생성 및 의존성 설치
 - [ ] cloudflared.exe 다운로드
-- [ ] `start_tunnel.bat` 실행 성공
+- [ ] `start_auto_update.bat` 실행 성공 ⭐
+- [ ] Cloudflare URL 확인
+- [ ] 브라우저에서 접속 테스트
+- [ ] 절전 모드 비활성화
+- [ ] (선택) 시작 프로그램 등록
+- [ ] (선택) 개발 컴퓨터에서 푸시 테스트at` 실행 성공
 - [ ] Cloudflare URL 확인
 - [ ] 브라우저에서 접속 테스트
 - [ ] 절전 모드 비활성화
