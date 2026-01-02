@@ -694,6 +694,9 @@
                     <span class="status-dot"></span>
                     시스템 정상
                 </span>
+                <span class="status-badge" style="margin-left: 8px; background: var(--neutral-100); color: var(--neutral-600); border-color: var(--neutral-300);">
+                    v39a26db
+                </span>
             </div>
             <div class="mode-selector">
                 <button class="mode-button active" onclick="switchMode('upload')">사진 분석</button>
@@ -1093,10 +1096,17 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // 디버깅
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            console.log('Video size:', video.videoWidth, 'x', video.videoHeight);
+            console.log('All landmarks count:', allLandmarks ? allLandmarks.length : 0);
+
             // 서버에서 받은 좌표는 원본 비디오 해상도 기준
             // 캔버스는 표시 크기 기준이므로 스케일 조정 필요
             const scaleX = canvas.width / video.videoWidth;
             const scaleY = canvas.height / video.videoHeight;
+
+            console.log('Scale:', scaleX, scaleY);
 
             // 모든 랜드마크 468개 점 (회색, 작게)
             if (allLandmarks && allLandmarks.length > 0) {
