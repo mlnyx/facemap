@@ -30,7 +30,17 @@ def init_services():
 @bp.route('/')
 def index():
     """메인 페이지"""
-    return render_template('index.html')
+    import subprocess
+    try:
+        git_version = subprocess.check_output(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            cwd='.',
+            text=True
+        ).strip()
+    except:
+        git_version = 'unknown'
+    
+    return render_template('index.html', git_version=git_version)
 
 
 @bp.route('/analyze', methods=['POST'])
