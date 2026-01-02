@@ -1,7 +1,11 @@
 # 치과용 얼굴 좌표 인식 프로그램 필수 패키지
 
+# 웹 프레임워크
+Flask>=3.0.0
+gunicorn>=21.2.0
+
 # 컴퓨터 비전
-opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
 mediapipe>=0.10.0
 
 # 수치 연산 및 데이터 처리

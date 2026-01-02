@@ -12,6 +12,8 @@ import os
 import sys
 from werkzeug.utils import secure_filename
 import tempfile
+from base64 import b64encode
+from io import BytesIO
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB 제한
@@ -400,27 +402,38 @@ def analyze_photo():
     """업로드된 사진 분석"""
     if 'file' not in request.files:
         return jsonify({'error': '파일이 없습니다'}), 400
-    
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': '파일이 선택되지 않았습니다'}), 400
-    
     if not file.content_type.startswith('image/'):
         return jsonify({'error': '이미지 파일만 업로드 가능합니다'}), 400
-    
     try:
         # 파일을 메모리에서 직접 읽기
         file_bytes = np.frombuffer(file.read(), np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        
         if image is None:
             return jsonify({'error': '이미지를 읽을 수 없습니다'}), 400
-        
         # 이미지 분석
         result = analyzer.analyze_single_image(image)
-        
+        # 시각화 이미지 생성 (정면 분석일 때만)
+        if result.get('is_frontal', False) and 'landmarks' in result:
+            # 468개 랜드마크 복원
+            all_landmarks = result.get('all_landmarks', [])
+            for (x, y) in all_landmarks:
+                cv2.circle(image, (x, y), 1, (180, 180, 180), -1)
+            # 주요 포인트
+            for key, color in zip(['pupil_center', 'mouth_center', 'nose_point', 'chin_point'],
+                                  [(255,255,0), (255,255,0), (0,0,255), (0,0,255)]):
+                pt = result['landmarks'][key]
+                cv2.circle(image, tuple(pt), 7, color, -1)
+            # 측정선
+            cv2.line(image, tuple(result['landmarks']['pupil_center']), tuple(result['landmarks']['mouth_center']), (255,0,0), 3)
+            cv2.line(image, tuple(result['landmarks']['nose_point']), tuple(result['landmarks']['chin_point']), (0,0,255), 3)
+        # 이미지를 base64로 인코딩
+        _, buffer = cv2.imencode('.jpg', image)
+        img_b64 = b64encode(buffer).decode('utf-8')
+        result['vis_image'] = img_b64
         return jsonify(result)
-    
     except Exception as e:
         print(f"분석 오류: {e}")
         return jsonify({'error': f'분석 중 오류 발생: {str(e)}'}), 500
