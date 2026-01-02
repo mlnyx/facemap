@@ -551,6 +551,18 @@
             display: none;
         }
 
+        @media (max-width: 768px) {
+            .live-stats-panel {
+                top: auto;
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                right: auto;
+                min-width: calc(100% - 48px);
+                max-width: 400px;
+            }
+        }
+
         .live-stats-panel.active {
             display: block;
             animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -984,8 +996,12 @@
                 video.classList.add('active');
                 
                 video.addEventListener('loadedmetadata', () => {
-                    overlay.width = video.videoWidth;
-                    overlay.height = video.videoHeight;
+                    // 캔버스를 비디오의 실제 표시 크기에 맞춤
+                    const rect = video.getBoundingClientRect();
+                    overlay.width = rect.width;
+                    overlay.height = rect.height;
+                    overlay.style.width = rect.width + 'px';
+                    overlay.style.height = rect.height + 'px';
                 });
 
                 document.getElementById('start-camera').style.display = 'none';
@@ -1073,14 +1089,30 @@
 
         function drawLandmarks(landmarks, allLandmarks) {
             const canvas = document.getElementById('overlay-canvas');
+            const video = document.getElementById('video-stream');
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Willis 주요 점
+            // 서버에서 받은 좌표는 원본 비디오 해상도 기준
+            // 캔버스는 표시 크기 기준이므로 스케일 조정 필요
+            const scaleX = canvas.width / video.videoWidth;
+            const scaleY = canvas.height / video.videoHeight;
+
+            // 모든 랜드마크 468개 점 (회색, 작게)
+            if (allLandmarks && allLandmarks.length > 0) {
+                ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
+                allLandmarks.forEach(pt => {
+                    ctx.beginPath();
+                    ctx.arc(pt[0] * scaleX, pt[1] * scaleY, 1.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+            }
+
+            // Willis 주요 점 (노란색, 크게)
             ctx.fillStyle = 'rgb(255, 255, 0)';
             [landmarks.pupil_center, landmarks.mouth_center, landmarks.nose_point, landmarks.chin_point, landmarks.left_pupil, landmarks.right_pupil].forEach(pt => {
                 ctx.beginPath();
-                ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
+                ctx.arc(pt[0] * scaleX, pt[1] * scaleY, 5, 0, 2 * Math.PI);
                 ctx.fill();
             });
 
@@ -1088,14 +1120,14 @@
             ctx.strokeStyle = 'rgb(255, 0, 0)';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(landmarks.pupil_center[0], landmarks.pupil_center[1]);
-            ctx.lineTo(landmarks.mouth_center[0], landmarks.mouth_center[1]);
+            ctx.moveTo(landmarks.pupil_center[0] * scaleX, landmarks.pupil_center[1] * scaleY);
+            ctx.lineTo(landmarks.mouth_center[0] * scaleX, landmarks.mouth_center[1] * scaleY);
             ctx.stroke();
 
             ctx.strokeStyle = 'rgb(0, 255, 0)';
             ctx.beginPath();
-            ctx.moveTo(landmarks.nose_point[0], landmarks.nose_point[1]);
-            ctx.lineTo(landmarks.chin_point[0], landmarks.chin_point[1]);
+            ctx.moveTo(landmarks.nose_point[0] * scaleX, landmarks.nose_point[1] * scaleY);
+            ctx.lineTo(landmarks.chin_point[0] * scaleX, landmarks.chin_point[1] * scaleY);
             ctx.stroke();
         }
 
