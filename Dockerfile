@@ -26,7 +26,7 @@ COPY . .
 EXPOSE 5001
 
 # 환경 변수
-ENV FLASK_APP=willis_web.py
+ENV FLASK_APP=run.py
 ENV PYTHONUNBUFFERED=1
 
 # Gunicorn으로 실행
