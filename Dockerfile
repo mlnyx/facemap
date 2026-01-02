@@ -22,15 +22,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 애플리케이션 파일 복사
 COPY . .
 
-# MediaPipe 모델 다운로드 (선택사항 - 첫 실행 시 자동 다운로드됨)
-RUN python -c "import os; \
-    import urllib.request; \
-    model_path = 'face_landmarker.task'; \
-    if not os.path.exists(model_path): \
-        url = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'; \
-        urllib.request.urlretrieve(url, model_path); \
-        print('Model downloaded successfully')"
-
 # 포트 노출
 EXPOSE 5001
 
