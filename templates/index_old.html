@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Willis 안면 계측법</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        width: 100%;
+      }
+
+      header {
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .subtitle {
+        font-size: 1.2em;
+        opacity: 0.9;
+      }
+
+      .mode-selector {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-bottom: 30px;
+      }
+
+      .mode-button {
+        background: white;
+        padding: 20px 40px;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #667eea;
+        border: 3px solid transparent;
+      }
+
+      .mode-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .mode-button.active {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .mode-content {
+        display: none;
+      }
+
+      .mode-content.active {
+        display: block;
+      }
+
+      .upload-section {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 10px;
+        padding: 60px;
+        margin: 20px 0;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .upload-area:hover {
+        background: #f8f9fa;
+        border-color: #764ba2;
+      }
+
+      .upload-area.dragover {
+        background: #e7f3ff;
+        border-color: #667eea;
+      }
+
+      #file-input {
+        display: none;
+      }
+
+      .upload-icon {
+        font-size: 4em;
+        margin-bottom: 10px;
+      }
+
+      .upload-text {
+        font-size: 1.2em;
+        color: #666;
+      }
+
+      .preview-container {
+        display: none;
+        margin-top: 20px;
+      }
+
+      .preview-image {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+
+      .analyze-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.2em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .analyze-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .analyze-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .camera-section {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        margin-bottom: 20px;
+      }
+
+      #video-stream {
+        width: 100%;
+        border-radius: 10px;
+      }
+
+      .results-panel {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        margin-top: 20px;
+      }
+
+      .results-panel h2 {
+        margin-bottom: 20px;
+        color: #333;
+        font-size: 1.8em;
+        text-align: center;
+      }
+
+      .metric {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+      }
+
+      .metric-label {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .metric-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .status {
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        font-size: 1.3em;
+        font-weight: bold;
+        margin-top: 10px;
+      }
+
+      .status.normal {
+        background: #d4edda;
+        color: #155724;
+        border: 2px solid #c3e6cb;
+      }
+
+      .status.below {
+        background: #f8d7da;
+        color: #721c24;
+        border: 2px solid #f5c6cb;
+      }
+
+      .status.above {
+        background: #fff3cd;
+        color: #856404;
+        border: 2px solid #ffeeba;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .loading.active {
+        display: block;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .mode-selector {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Willis 안면 계측법</h1>
+        <p class="subtitle">수직고경 평가 시스템</p>
+      </header>
+
+      <div class="mode-selector">
+        <div class="mode-button active" onclick="switchMode('upload')">
+          사진 업로드
+        </div>
+        <div class="mode-button" onclick="switchMode('camera')">
+          실시간 카메라
+        </div>
+      </div>
+
+      <!-- 사진 업로드 모드 -->
+      <div id="upload-mode" class="mode-content active">
+        <div class="upload-section">
+          <h2>사진 업로드하기</h2>
+          <div
+            class="upload-area"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="handleDragOver(event)"
+            ondrop="handleDrop(event)"
+            ondragleave="handleDragLeave(event)"
+          >
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">
+              클릭하거나 파일을 드래그하세요<br />
+              <small>(JPG, PNG 지원)</small>
+            </div>
+          </div>
+          <input
+            type="file"
+            id="file-input"
+            accept="image/*"
+            onchange="handleFileSelect(event)"
+          />
+
+          <div class="preview-container" id="preview-container">
+            <img id="preview-image" class="preview-image" alt="미리보기" />
+            <br />
+            <button class="analyze-button" onclick="analyzeUploadedImage()">
+              분석하기
+            </button>
+          </div>
+
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px">분석 중...</p>
+          </div>
+        </div>
+
+        <div class="results-panel" id="upload-results" style="display: none">
+          <h2 id="result-title">📊 분석 결과</h2>
+
+          <!-- 정면 분석 결과 -->
+          <div id="frontal-results" style="display: none">
+            <div class="metric">
+              <div class="metric-label">동공-구열 거리</div>
+              <div class="metric-value" id="upload-pupil-mouth">0 px</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">비저부-턱끝 거리</div>
+              <div class="metric-value" id="upload-nose-chin">0 px</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Willis 비율</div>
+              <div class="metric-value" id="upload-ratio">0.000</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">얼굴 대칭도</div>
+              <div class="metric-value" id="upload-symmetry">0%</div>
+            </div>
+          </div>
+
+          <!-- 측면 분석 결과 -->
+          <div id="profile-results" style="display: none">
+            <div class="metric">
+              <div class="metric-label">측면 Willis 비율</div>
+              <div class="metric-value" id="upload-lateral-ratio">0.000</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">코끝-턱끝 거리</div>
+              <div class="metric-value" id="upload-profile-nose-chin">0 px</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">눈-턱끝 거리</div>
+              <div class="metric-value" id="upload-eye-chin">0 px</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">턱 각도 (참고)</div>
+              <div class="metric-value" id="upload-chin-angle">0°</div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">자연스러움</div>
+              <div class="metric-value" id="upload-naturalness">-</div>
+            </div>
+          </div>
+
+          <div class="status" id="upload-status">대기 중...</div>
+        </div>
+      </div>
+
+      <!-- 실시간 카메라 모드 -->
+      <div id="camera-mode" class="mode-content">
+        <div
+          class="camera-section"
+          style="position: relative; display: inline-block"
+        >
+          <video
+            id="video-stream"
+            autoplay
+            playsinline
+            style="
+              width: 100%;
+              max-width: 640px;
+              border-radius: 10px;
+              display: block;
+              transform: scaleX(-1);
+            "
+          ></video>
+          <canvas
+            id="overlay-canvas"
+            style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              pointer-events: none;
+              transform: scaleX(-1);
+            "
+          ></canvas>
+          <canvas id="capture-canvas" style="display: none"></canvas>
+        </div>
+
+        <div class="results-panel">
+          <h2>📊 실시간 측정 데이터</h2>
+          <div class="metric">
+            <div class="metric-label">동공-구열 거리</div>
+            <div class="metric-value" id="camera-pupil-mouth">0 px</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">비저부-턱끝 거리</div>
+            <div class="metric-value" id="camera-nose-chin">0 px</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Willis 비율</div>
+            <div class="metric-value" id="camera-ratio">0.000</div>
+          </div>
+          <div class="status" id="camera-status">대기 중...</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentMode = "upload";
+      let cameraUpdateInterval = null;
+      let selectedFile = null;
+      let videoStream = null;
+      let videoElement = null;
+      let canvasElement = null;
+
+      function switchMode(mode) {
+        currentMode = mode;
+
+        // 버튼 활성화 상태 변경
+        document.querySelectorAll(".mode-button").forEach((btn) => {
+          btn.classList.remove("active");
+        });
+        event.target.classList.add("active");
+
+        // 콘텐츠 표시 전환
+        document.querySelectorAll(".mode-content").forEach((content) => {
+          content.classList.remove("active");
+        });
+        document.getElementById(mode + "-mode").classList.add("active");
+
+        // 카메라 모드일 때만 데이터 업데이트
+        if (mode === "camera") {
+          startCamera();
+        } else {
+          stopCameraUpdate();
+          stopCamera();
+        }
+      }
+
+      async function startCamera() {
+        try {
+          videoElement = document.getElementById("video-stream");
+          canvasElement = document.getElementById("capture-canvas");
+          const overlayCanvas = document.getElementById("overlay-canvas");
+
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: 320, height: 240 },
+          });
+
+          videoStream = stream;
+          videoElement.srcObject = stream;
+
+          // 비디오 메타데이터 로드 후 오버레이 캔버스 크기 설정
+          videoElement.addEventListener("loadedmetadata", () => {
+            overlayCanvas.width = videoElement.videoWidth;
+            overlayCanvas.height = videoElement.videoHeight;
+          });
+
+          document.getElementById("camera-status").textContent =
+            "카메라 준비 완료";
+
+          // 1초마다 프레임 캡처 및 분석
+          startCameraUpdate();
+        } catch (error) {
+          console.error("카메라 접근 오류:", error);
+          document.getElementById("camera-status").textContent =
+            "카메라 접근 실패: " + error.message;
+        }
+      }
+
+      function stopCamera() {
+        if (videoStream) {
+          videoStream.getTracks().forEach((track) => track.stop());
+          videoStream = null;
+        }
+        if (videoElement) {
+          videoElement.srcObject = null;
+        }
+      }
+
+      function captureFrame() {
+        if (!videoElement || !canvasElement) return null;
+
+        canvasElement.width = videoElement.videoWidth;
+        canvasElement.height = videoElement.videoHeight;
+
+        const ctx = canvasElement.getContext("2d");
+        ctx.drawImage(videoElement, 0, 0);
+
+        return canvasElement.toDataURL("image/jpeg", 0.3);
+      }
+
+      function startCameraUpdate() {
+        if (cameraUpdateInterval) return;
+
+        cameraUpdateInterval = setInterval(async () => {
+          const frameData = captureFrame();
+          if (!frameData) return;
+
+          try {
+            const response = await fetch("/analyze_frame", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ frame: frameData }),
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+              document.getElementById("camera-status").textContent = data.error;
+              clearLandmarks(); // 에러 시 랜드마크 지우기
+              return;
+            }
+
+            document.getElementById("camera-pupil-mouth").textContent =
+              data.pupil_to_mouth + " px";
+            document.getElementById("camera-nose-chin").textContent =
+              data.nose_to_chin + " px";
+            document.getElementById("camera-ratio").textContent = data.ratio;
+
+            const statusElement = document.getElementById("camera-status");
+            statusElement.textContent = "판정: " + data.classification;
+
+            statusElement.className = "status";
+            if (data.classification === "정상") {
+              statusElement.classList.add("normal");
+            } else if (data.classification.includes("평균 이하")) {
+              statusElement.classList.add("below");
+            } else if (data.classification.includes("평균 이상")) {
+              statusElement.classList.add("above");
+            }
+
+            // 랜드마크 그리기
+            if (data.landmarks && data.all_landmarks) {
+              drawLandmarks(data.landmarks, data.all_landmarks);
+            }
+          } catch (error) {
+            console.error("분석 오류:", error);
+          }
+        }, 300); // 실시간 응답: 0.3초마다 업데이트
+      }
+
+      function stopCameraUpdate() {
+        if (cameraUpdateInterval) {
+          clearInterval(cameraUpdateInterval);
+          cameraUpdateInterval = null;
+        }
+      }
+
+      function clearLandmarks() {
+        const overlayCanvas = document.getElementById("overlay-canvas");
+        if (!overlayCanvas) return;
+        const ctx = overlayCanvas.getContext("2d");
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      }
+
+      function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.closest(".upload-area").classList.add("dragover");
+      }
+
+      function drawLandmarks(landmarks, allLandmarks) {
+        const overlayCanvas = document.getElementById("overlay-canvas");
+        if (!overlayCanvas) return;
+
+        const ctx = overlayCanvas.getContext("2d");
+        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+        // 성능 최적화: 468개 랜드마크 표시 비활성화 (필요시 주석 해제)
+        // if (allLandmarks && allLandmarks.length > 0) {
+        //   ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
+        //   allLandmarks.forEach((pt) => {
+        //     ctx.beginPath();
+        //     ctx.arc(pt[0], pt[1], 1, 0, 2 * Math.PI);
+        //     ctx.fill();
+        //   });
+        // }
+
+        // Willis 주요 점 그리기 (큰 점)
+        ctx.fillStyle = "rgb(255, 255, 0)";
+        const points = [
+          landmarks.pupil_center,
+          landmarks.mouth_center,
+          landmarks.nose_point,
+          landmarks.chin_point,
+          landmarks.left_pupil,
+          landmarks.right_pupil,
+        ];
+
+        points.forEach((pt) => {
+          ctx.beginPath();
+          ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
+          ctx.fill();
+        });
+
+        // Willis 측정선 그리기
+        // 동공-구열 선 (빨간색)
+        ctx.strokeStyle = "rgb(255, 0, 0)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(landmarks.pupil_center[0], landmarks.pupil_center[1]);
+        ctx.lineTo(landmarks.mouth_center[0], landmarks.mouth_center[1]);
+        ctx.stroke();
+
+        // 비저부-턱끝 선 (빨간색)
+        ctx.strokeStyle = "rgb(0, 255, 0)";
+        ctx.beginPath();
+        ctx.moveTo(landmarks.nose_point[0], landmarks.nose_point[1]);
+        ctx.lineTo(landmarks.chin_point[0], landmarks.chin_point[1]);
+        ctx.stroke();
+      }
+
+      function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.closest(".upload-area").classList.remove("dragover");
+      }
+
+      function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.target.closest(".upload-area").classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleFile(files[0]);
+        }
+      }
+
+      function handleFileSelect(e) {
+        const files = e.target.files;
+        if (files.length > 0) {
+          handleFile(files[0]);
+        }
+      }
+
+      function handleFile(file) {
+        if (!file.type.startsWith("image/")) {
+          alert("이미지 파일만 업로드 가능합니다.");
+          return;
+        }
+
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          document.getElementById("preview-image").src = e.target.result;
+          document.getElementById("preview-container").style.display = "block";
+          document.getElementById("upload-results").style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function analyzeUploadedImage() {
+        if (!selectedFile) {
+          alert("파일을 먼저 선택하세요.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        document.getElementById("loading").classList.add("active");
+        document.getElementById("upload-results").style.display = "none";
+
+        fetch("/analyze", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("loading").classList.remove("active");
+
+            if (data.error) {
+              alert("분석 실패: " + data.error);
+              return;
+            }
+
+            // 결과 제목 업데이트
+            document.getElementById("result-title").textContent =
+              "" + data.analysis_type;
+
+            if (data.is_frontal) {
+              // 정면 분석 결과 표시
+              document.getElementById("frontal-results").style.display =
+                "block";
+              document.getElementById("profile-results").style.display = "none";
+
+              document.getElementById("upload-pupil-mouth").textContent =
+                data.pupil_to_mouth + " px";
+              document.getElementById("upload-nose-chin").textContent =
+                data.nose_to_chin + " px";
+              document.getElementById("upload-ratio").textContent = data.ratio;
+              document.getElementById("upload-symmetry").textContent =
+                data.symmetry + "%";
+
+              const statusElement = document.getElementById("upload-status");
+              statusElement.textContent = "판정: " + data.classification;
+
+              statusElement.className = "status";
+              if (data.classification === "정상") {
+                statusElement.classList.add("normal");
+              } else if (data.classification.includes("평균 이하")) {
+                statusElement.classList.add("below");
+              } else if (data.classification.includes("평균 이상")) {
+                statusElement.classList.add("above");
+              }
+            } else {
+              // 측면 분석 결과 표시
+              document.getElementById("frontal-results").style.display = "none";
+              document.getElementById("profile-results").style.display =
+                "block";
+
+              document.getElementById("upload-lateral-ratio").textContent =
+                data.lateral_ratio;
+              document.getElementById("upload-profile-nose-chin").textContent =
+                data.nose_to_chin + " px";
+              document.getElementById("upload-eye-chin").textContent =
+                data.eye_to_chin + " px";
+              document.getElementById("upload-chin-angle").textContent =
+                data.chin_angle + "°";
+              document.getElementById("upload-naturalness").textContent =
+                data.naturalness;
+
+              const statusElement = document.getElementById("upload-status");
+              statusElement.textContent = "평가: " + data.classification;
+
+              statusElement.className = "status";
+              if (data.naturalness === "양호") {
+                statusElement.classList.add("normal");
+              } else {
+                statusElement.classList.add("below");
+              }
+            }
+
+            document.getElementById("upload-results").style.display = "block";
+          })
+          .catch((error) => {
+            document.getElementById("loading").classList.remove("active");
+            alert("분석 중 오류가 발생했습니다: " + error);
+          });
+      }
+    </script>
+  </body>
+</html>

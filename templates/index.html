@@ -1,765 +1,1105 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Willis 안면 계측법</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Willis Facial Analysis System</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont,
-          sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 20px;
-      }
-
-      .container {
-        max-width: 1200px;
-        width: 100%;
-      }
-
-      header {
-        text-align: center;
-        color: white;
-        margin-bottom: 40px;
-      }
-
-      h1 {
-        font-size: 2.5em;
-        margin-bottom: 10px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-      }
-
-      .subtitle {
-        font-size: 1.2em;
-        opacity: 0.9;
-      }
-
-      .mode-selector {
-        display: flex;
-        gap: 20px;
-        justify-content: center;
-        margin-bottom: 30px;
-      }
-
-      .mode-button {
-        background: white;
-        padding: 20px 40px;
-        border-radius: 15px;
-        cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        font-size: 1.2em;
-        font-weight: bold;
-        color: #667eea;
-        border: 3px solid transparent;
-      }
-
-      .mode-button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-      }
-
-      .mode-button.active {
-        border-color: #667eea;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-      }
-
-      .mode-content {
-        display: none;
-      }
-
-      .mode-content.active {
-        display: block;
-      }
-
-      .upload-section {
-        background: white;
-        border-radius: 15px;
-        padding: 40px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        text-align: center;
-        margin-bottom: 20px;
-      }
-
-      .upload-area {
-        border: 3px dashed #667eea;
-        border-radius: 10px;
-        padding: 60px;
-        margin: 20px 0;
-        cursor: pointer;
-        transition: all 0.3s;
-      }
-
-      .upload-area:hover {
-        background: #f8f9fa;
-        border-color: #764ba2;
-      }
-
-      .upload-area.dragover {
-        background: #e7f3ff;
-        border-color: #667eea;
-      }
-
-      #file-input {
-        display: none;
-      }
-
-      .upload-icon {
-        font-size: 4em;
-        margin-bottom: 10px;
-      }
-
-      .upload-text {
-        font-size: 1.2em;
-        color: #666;
-      }
-
-      .preview-container {
-        display: none;
-        margin-top: 20px;
-      }
-
-      .preview-image {
-        max-width: 100%;
-        max-height: 500px;
-        border-radius: 10px;
-        margin: 20px 0;
-      }
-
-      .analyze-button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 15px 40px;
-        border: none;
-        border-radius: 10px;
-        font-size: 1.2em;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s;
-      }
-
-      .analyze-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      }
-
-      .analyze-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .camera-section {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        margin-bottom: 20px;
-      }
-
-      #video-stream {
-        width: 100%;
-        border-radius: 10px;
-      }
-
-      .results-panel {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        margin-top: 20px;
-      }
-
-      .results-panel h2 {
-        margin-bottom: 20px;
-        color: #333;
-        font-size: 1.8em;
-        text-align: center;
-      }
-
-      .metric {
-        margin-bottom: 20px;
-        padding: 15px;
-        background: #f8f9fa;
-        border-radius: 10px;
-        border-left: 4px solid #667eea;
-      }
-
-      .metric-label {
-        font-size: 0.9em;
-        color: #666;
-        margin-bottom: 5px;
-      }
-
-      .metric-value {
-        font-size: 1.8em;
-        font-weight: bold;
-        color: #333;
-      }
-
-      .status {
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        font-size: 1.3em;
-        font-weight: bold;
-        margin-top: 10px;
-      }
-
-      .status.normal {
-        background: #d4edda;
-        color: #155724;
-        border: 2px solid #c3e6cb;
-      }
-
-      .status.below {
-        background: #f8d7da;
-        color: #721c24;
-        border: 2px solid #f5c6cb;
-      }
-
-      .status.above {
-        background: #fff3cd;
-        color: #856404;
-        border: 2px solid #ffeeba;
-      }
-
-      .loading {
-        display: none;
-        text-align: center;
-        padding: 20px;
-      }
-
-      .loading.active {
-        display: block;
-      }
-
-      .spinner {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #667eea;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
+        /* ============================================
+           LIQUID GLASS UI SYSTEM
+           Apple Vision Pro / macOS Sonoma 스타일
+           ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
 
-      @media (max-width: 768px) {
+        :root {
+            /* Glass System Colors */
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: rgba(0, 0, 0, 0.08);
+            --glass-shadow-lg: rgba(0, 0, 0, 0.15);
+            
+            /* Neutral Palette */
+            --neutral-50: #fafafa;
+            --neutral-100: #f5f5f5;
+            --neutral-200: #e5e5e5;
+            --neutral-300: #d4d4d4;
+            --neutral-400: #a3a3a3;
+            --neutral-500: #737373;
+            --neutral-600: #525252;
+            --neutral-700: #404040;
+            --neutral-800: #262626;
+            --neutral-900: #171717;
+            
+            /* Accent Colors */
+            --blue-50: #eff6ff;
+            --blue-500: #3b82f6;
+            --blue-600: #2563eb;
+            --green-50: #f0fdf4;
+            --green-500: #22c55e;
+            --green-600: #16a34a;
+            --red-50: #fef2f2;
+            --red-500: #ef4444;
+            --red-600: #dc2626;
+            --orange-500: #f97316;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, var(--neutral-100) 0%, var(--neutral-200) 100%);
+            min-height: 100vh;
+            color: var(--neutral-800);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============================================
+           HEADER - Sticky Glass Navigation
+           ============================================ */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: 0 4px 16px var(--glass-shadow);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-title h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--neutral-800);
+            letter-spacing: -0.5px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: var(--green-50);
+            border: 1px solid var(--green-500);
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--green-600);
+            margin-left: 12px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green-500);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Mode Selector */
         .mode-selector {
-          flex-direction: column;
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
         }
-      }
+
+        .mode-button {
+            padding: 8px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--neutral-600);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mode-button:hover {
+            color: var(--neutral-800);
+        }
+
+        .mode-button.active {
+            background: white;
+            color: var(--neutral-900);
+            box-shadow: 0 2px 8px var(--glass-shadow);
+        }
+
+        /* ============================================
+           MAIN LAYOUT
+           ============================================ */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            min-height: calc(100vh - 100px);
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: contents;
+        }
+
+        /* ============================================
+           VIEWER PANEL
+           ============================================ */
+        .viewer-panel {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px var(--glass-shadow-lg);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .viewer-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--neutral-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .viewer-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--neutral-800);
+        }
+
+        .icon-button {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--neutral-100);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: var(--neutral-600);
+        }
+
+        .icon-button:hover {
+            background: var(--neutral-200);
+            transform: scale(0.98);
+        }
+
+        .viewer-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--neutral-50);
+            position: relative;
+            min-height: 600px;
+        }
+
+        /* Upload Dropzone */
+        .upload-dropzone {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 48px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px dashed transparent;
+        }
+
+        .upload-dropzone:hover {
+            border-color: var(--blue-500);
+            background: var(--blue-50);
+        }
+
+        .upload-dropzone.dragover {
+            border-color: var(--blue-600);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .upload-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .upload-text-primary {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--neutral-800);
+        }
+
+        .upload-text-secondary {
+            font-size: 14px;
+            color: var(--neutral-500);
+        }
+
+        .upload-button {
+            margin-top: 8px;
+            padding: 12px 32px;
+            background: var(--blue-500);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        }
+
+        .upload-button:hover {
+            background: var(--blue-600);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Image Preview */
+        #preview-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+            border-radius: 12px;
+        }
+
+        #preview-image.visible {
+            display: block;
+        }
+
+        /* Camera Feed */
+        #video-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        #video-stream.active {
+            display: block;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--neutral-200);
+            border-top-color: var(--blue-500);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--neutral-700);
+        }
+
+        /* ============================================
+           ANALYSIS PANEL (Sidebar)
+           ============================================ */
+        .analysis-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 16px var(--glass-shadow);
+            border: 1px solid var(--glass-border);
+        }
+
+        .panel-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--neutral-800);
+            margin-bottom: 20px;
+        }
+
+        /* Analyze Button */
+        .analyze-button {
+            width: 100%;
+            padding: 16px;
+            background: var(--blue-500);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .analyze-button:hover:not(:disabled) {
+            background: var(--blue-600);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .analyze-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Measurement Display */
+        .measurements-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .measurement-item {
+            padding: 16px;
+            background: var(--neutral-50);
+            border-radius: 12px;
+            border: 1px solid var(--neutral-200);
+        }
+
+        .measurement-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--neutral-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .measurement-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--neutral-900);
+            font-family: 'SF Mono', Monaco, monospace;
+            line-height: 1;
+        }
+
+        .measurement-unit {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--neutral-400);
+            margin-left: 4px;
+        }
+
+        /* Result Badge */
+        .result-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            width: 100%;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .result-badge.normal {
+            background: var(--green-50);
+            color: var(--green-600);
+            border: 2px solid var(--green-500);
+        }
+
+        .result-badge.below {
+            background: var(--red-50);
+            color: var(--red-600);
+            border: 2px solid var(--red-500);
+        }
+
+        .result-badge.above {
+            background: rgba(249, 115, 22, 0.1);
+            color: var(--orange-500);
+            border: 2px solid var(--orange-500);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--neutral-400);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* ============================================
+           CAMERA MODE
+           ============================================ */
+        #camera-mode .main-container {
+            grid-template-columns: 1fr;
+        }
+
+        .camera-controls {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            gap: 12px;
+        }
+
+        .camera-button {
+            padding: 14px 28px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 999px;
+            color: var(--neutral-800);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px var(--glass-shadow-lg);
+        }
+
+        .camera-button:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .camera-button.danger {
+            background: var(--red-500);
+            color: white;
+            border-color: var(--red-600);
+        }
+
+        /* Live Stats Panel */
+        .live-stats-panel {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            min-width: 280px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px var(--glass-shadow-lg);
+            display: none;
+        }
+
+        .live-stats-panel.active {
+            display: block;
+            animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        .live-stat-item {
+            margin-bottom: 16px;
+        }
+
+        .live-stat-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neutral-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .live-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            color: var(--neutral-900);
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        /* ============================================
+           NOTIFICATIONS
+           ============================================ */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 32px;
+            min-width: 320px;
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px var(--glass-shadow-lg);
+            border: 1px solid var(--glass-border);
+            display: none;
+            align-items: flex-start;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .notification.active {
+            display: flex;
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        .notification-icon {
+            font-size: 20px;
+        }
+
+        .notification.error .notification-icon {
+            color: var(--red-500);
+        }
+
+        .notification.success .notification-icon {
+            color: var(--green-500);
+        }
+
+        .notification-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neutral-900);
+        }
+
+        .notification-message {
+            font-size: 13px;
+            color: var(--neutral-600);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 16px;
+            }
+            
+            .main-container {
+                padding: 16px;
+            }
+            
+            .viewer-panel {
+                border-radius: 16px;
+            }
+            
+            .live-stats-panel {
+                top: 16px;
+                right: 16px;
+                min-width: 220px;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <div class="container">
-      <header>
-        <h1>Willis 안면 계측법</h1>
-        <p class="subtitle">수직고경 평가 시스템</p>
-      </header>
-
-      <div class="mode-selector">
-        <div class="mode-button active" onclick="switchMode('upload')">
-          사진 업로드
+</head>
+<body>
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="app-title">
+                <h1>Willis Facial Analysis System</h1>
+                <span class="status-badge">
+                    <span class="status-dot"></span>
+                    시스템 정상
+                </span>
+            </div>
+            <div class="mode-selector">
+                <button class="mode-button active" onclick="switchMode('upload')">사진 분석</button>
+                <button class="mode-button" onclick="switchMode('camera')">실시간 카메라</button>
+            </div>
         </div>
-        <div class="mode-button" onclick="switchMode('camera')">
-          실시간 카메라
+    </header>
+
+    <!-- Photo Analysis Mode -->
+    <div id="upload-mode" class="mode-content active">
+        <main class="main-container">
+            <!-- Viewer Panel -->
+            <div class="viewer-panel">
+                <div class="viewer-header">
+                    <span class="viewer-title">이미지 뷰어</span>
+                    <button class="icon-button" onclick="clearImage()" title="초기화">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="viewer-content">
+                    <div class="upload-dropzone" id="upload-dropzone" 
+                         onclick="document.getElementById('file-input').click()"
+                         ondragover="handleDragOver(event)"
+                         ondrop="handleDrop(event)"
+                         ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📷</div>
+                        <div class="upload-text-primary">파일을 드래그 & 드롭하세요</div>
+                        <div class="upload-text-secondary">JPG, PNG 지원 (최대 16MB)</div>
+                        <button class="upload-button">파일 선택</button>
+                        <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(event)">
+                    </div>
+                    <img id="preview-image" alt="업로드된 이미지">
+                    <div class="loading-overlay" id="loading-overlay">
+                        <div>
+                            <div class="spinner"></div>
+                            <div class="loading-text">얼굴 분석 중...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Panel -->
+            <aside class="analysis-panel">
+                <div class="panel-card">
+                    <button class="analyze-button" id="analyze-button" onclick="analyzeUploadedImage()" disabled>
+                        분석 시작
+                    </button>
+                </div>
+
+                <div class="panel-card">
+                    <h3 class="panel-card-title">Willis 계측 결과</h3>
+                    <div id="results-content" class="measurements-grid">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div>사진을 업로드하고<br>분석을 시작하세요</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-card" style="background: var(--blue-50); border-color: var(--blue-500);">
+                    <div style="font-size: 13px; color: var(--neutral-700); line-height: 1.6;">
+                        <strong>Willis 안면 계측법</strong>은 수직 고경(VDO) 감소를 진단하는 방법입니다. 정상 범위: 0.95~1.05
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Camera Mode -->
+    <div id="camera-mode" class="mode-content">
+        <main class="main-container">
+            <div class="viewer-panel">
+                <div class="viewer-header">
+                    <span class="viewer-title">실시간 카메라</span>
+                </div>
+                <div class="viewer-content">
+                    <video id="video-stream" autoplay playsinline style="transform: scaleX(-1);"></video>
+                    <canvas id="overlay-canvas" style="position: absolute; top: 0; left: 0; pointer-events: none; transform: scaleX(-1);"></canvas>
+                    <canvas id="capture-canvas" style="display: none;"></canvas>
+                    
+                    <div class="camera-controls">
+                        <button class="camera-button" id="start-camera" onclick="startCamera()">카메라 시작</button>
+                        <button class="camera-button danger" id="stop-camera" onclick="stopCamera()" style="display: none;">카메라 중지</button>
+                    </div>
+                    
+                    <div class="live-stats-panel" id="live-stats-panel">
+                        <div class="live-stat-item">
+                            <div class="live-stat-label">동공-구열 거리</div>
+                            <div class="live-stat-value" id="live-pupil-mouth">-<span class="measurement-unit">px</span></div>
+                        </div>
+                        <div class="live-stat-item">
+                            <div class="live-stat-label">비저부-턱끝 거리</div>
+                            <div class="live-stat-value" id="live-nose-chin">-<span class="measurement-unit">px</span></div>
+                        </div>
+                        <div class="live-stat-item">
+                            <div class="live-stat-label">Willis 비율</div>
+                            <div class="live-stat-value" id="live-ratio">-</div>
+                        </div>
+                        <div id="live-classification"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <div class="notification-icon">⚠️</div>
+        <div>
+            <div class="notification-title" id="notification-title">알림</div>
+            <div class="notification-message" id="notification-message"></div>
         </div>
-      </div>
-
-      <!-- 사진 업로드 모드 -->
-      <div id="upload-mode" class="mode-content active">
-        <div class="upload-section">
-          <h2>사진 업로드하기</h2>
-          <div
-            class="upload-area"
-            onclick="document.getElementById('file-input').click()"
-            ondragover="handleDragOver(event)"
-            ondrop="handleDrop(event)"
-            ondragleave="handleDragLeave(event)"
-          >
-            <div class="upload-icon">📁</div>
-            <div class="upload-text">
-              클릭하거나 파일을 드래그하세요<br />
-              <small>(JPG, PNG 지원)</small>
-            </div>
-          </div>
-          <input
-            type="file"
-            id="file-input"
-            accept="image/*"
-            onchange="handleFileSelect(event)"
-          />
-
-          <div class="preview-container" id="preview-container">
-            <img id="preview-image" class="preview-image" alt="미리보기" />
-            <br />
-            <button class="analyze-button" onclick="analyzeUploadedImage()">
-              분석하기
-            </button>
-          </div>
-
-          <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p style="margin-top: 10px">분석 중...</p>
-          </div>
-        </div>
-
-        <div class="results-panel" id="upload-results" style="display: none">
-          <h2 id="result-title">📊 분석 결과</h2>
-
-          <!-- 정면 분석 결과 -->
-          <div id="frontal-results" style="display: none">
-            <div class="metric">
-              <div class="metric-label">동공-구열 거리</div>
-              <div class="metric-value" id="upload-pupil-mouth">0 px</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">비저부-턱끝 거리</div>
-              <div class="metric-value" id="upload-nose-chin">0 px</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">Willis 비율</div>
-              <div class="metric-value" id="upload-ratio">0.000</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">얼굴 대칭도</div>
-              <div class="metric-value" id="upload-symmetry">0%</div>
-            </div>
-          </div>
-
-          <!-- 측면 분석 결과 -->
-          <div id="profile-results" style="display: none">
-            <div class="metric">
-              <div class="metric-label">측면 Willis 비율</div>
-              <div class="metric-value" id="upload-lateral-ratio">0.000</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">코끝-턱끝 거리</div>
-              <div class="metric-value" id="upload-profile-nose-chin">0 px</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">눈-턱끝 거리</div>
-              <div class="metric-value" id="upload-eye-chin">0 px</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">턱 각도 (참고)</div>
-              <div class="metric-value" id="upload-chin-angle">0°</div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">자연스러움</div>
-              <div class="metric-value" id="upload-naturalness">-</div>
-            </div>
-          </div>
-
-          <div class="status" id="upload-status">대기 중...</div>
-        </div>
-      </div>
-
-      <!-- 실시간 카메라 모드 -->
-      <div id="camera-mode" class="mode-content">
-        <div
-          class="camera-section"
-          style="position: relative; display: inline-block"
-        >
-          <video
-            id="video-stream"
-            autoplay
-            playsinline
-            style="
-              width: 100%;
-              max-width: 640px;
-              border-radius: 10px;
-              display: block;
-              transform: scaleX(-1);
-            "
-          ></video>
-          <canvas
-            id="overlay-canvas"
-            style="
-              position: absolute;
-              top: 0;
-              left: 0;
-              pointer-events: none;
-              transform: scaleX(-1);
-            "
-          ></canvas>
-          <canvas id="capture-canvas" style="display: none"></canvas>
-        </div>
-
-        <div class="results-panel">
-          <h2>📊 실시간 측정 데이터</h2>
-          <div class="metric">
-            <div class="metric-label">동공-구열 거리</div>
-            <div class="metric-value" id="camera-pupil-mouth">0 px</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">비저부-턱끝 거리</div>
-            <div class="metric-value" id="camera-nose-chin">0 px</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Willis 비율</div>
-            <div class="metric-value" id="camera-ratio">0.000</div>
-          </div>
-          <div class="status" id="camera-status">대기 중...</div>
-        </div>
-      </div>
     </div>
 
     <script>
-      let currentMode = "upload";
-      let cameraUpdateInterval = null;
-      let selectedFile = null;
-      let videoStream = null;
-      let videoElement = null;
-      let canvasElement = null;
+        let selectedFile = null;
+        let videoStream = null;
+        let cameraUpdateInterval = null;
 
-      function switchMode(mode) {
-        currentMode = mode;
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
 
-        // 버튼 활성화 상태 변경
-        document.querySelectorAll(".mode-button").forEach((btn) => {
-          btn.classList.remove("active");
-        });
-        event.target.classList.add("active");
+            document.querySelectorAll('.mode-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(mode + '-mode').classList.add('active');
 
-        // 콘텐츠 표시 전환
-        document.querySelectorAll(".mode-content").forEach((content) => {
-          content.classList.remove("active");
-        });
-        document.getElementById(mode + "-mode").classList.add("active");
-
-        // 카메라 모드일 때만 데이터 업데이트
-        if (mode === "camera") {
-          startCamera();
-        } else {
-          stopCameraUpdate();
-          stopCamera();
+            if (mode === 'camera') {
+                // Camera mode activated
+            } else {
+                stopCamera();
+            }
         }
-      }
 
-      async function startCamera() {
-        try {
-          videoElement = document.getElementById("video-stream");
-          canvasElement = document.getElementById("capture-canvas");
-          const overlayCanvas = document.getElementById("overlay-canvas");
-
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user", width: 320, height: 240 },
-          });
-
-          videoStream = stream;
-          videoElement.srcObject = stream;
-
-          // 비디오 메타데이터 로드 후 오버레이 캔버스 크기 설정
-          videoElement.addEventListener("loadedmetadata", () => {
-            overlayCanvas.width = videoElement.videoWidth;
-            overlayCanvas.height = videoElement.videoHeight;
-          });
-
-          document.getElementById("camera-status").textContent =
-            "카메라 준비 완료";
-
-          // 1초마다 프레임 캡처 및 분석
-          startCameraUpdate();
-        } catch (error) {
-          console.error("카메라 접근 오류:", error);
-          document.getElementById("camera-status").textContent =
-            "카메라 접근 실패: " + error.message;
+        // File Upload
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.target.closest('.upload-dropzone').classList.add('dragover');
         }
-      }
 
-      function stopCamera() {
-        if (videoStream) {
-          videoStream.getTracks().forEach((track) => track.stop());
-          videoStream = null;
+        function handleDragLeave(e) {
+            e.target.closest('.upload-dropzone').classList.remove('dragover');
         }
-        if (videoElement) {
-          videoElement.srcObject = null;
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.target.closest('.upload-dropzone').classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                handleFile(files[0]);
+            }
         }
-      }
 
-      function captureFrame() {
-        if (!videoElement || !canvasElement) return null;
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        }
 
-        canvasElement.width = videoElement.videoWidth;
-        canvasElement.height = videoElement.videoHeight;
+        function handleFile(file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById('preview-image');
+                img.src = e.target.result;
+                img.classList.add('visible');
+                document.getElementById('upload-dropzone').style.display = 'none';
+                document.getElementById('analyze-button').disabled = false;
+                showEmptyState();
+            };
+            reader.readAsDataURL(file);
+        }
 
-        const ctx = canvasElement.getContext("2d");
-        ctx.drawImage(videoElement, 0, 0);
+        function clearImage() {
+            document.getElementById('preview-image').src = '';
+            document.getElementById('preview-image').classList.remove('visible');
+            document.getElementById('upload-dropzone').style.display = 'flex';
+            document.getElementById('file-input').value = '';
+            document.getElementById('analyze-button').disabled = true;
+            selectedFile = null;
+            showEmptyState();
+        }
 
-        return canvasElement.toDataURL("image/jpeg", 0.3);
-      }
+        function analyzeUploadedImage() {
+            if (!selectedFile) return;
 
-      function startCameraUpdate() {
-        if (cameraUpdateInterval) return;
+            const formData = new FormData();
+            formData.append('file', selectedFile);
 
-        cameraUpdateInterval = setInterval(async () => {
-          const frameData = captureFrame();
-          if (!frameData) return;
+            document.getElementById('loading-overlay').classList.add('active');
+            document.getElementById('analyze-button').disabled = true;
 
-          try {
-            const response = await fetch("/analyze_frame", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ frame: frameData }),
+            fetch('/analyze', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading-overlay').classList.remove('active');
+                document.getElementById('analyze-button').disabled = false;
+
+                if (data.error) {
+                    showNotification('error', '분석 실패', data.error);
+                    showEmptyState();
+                } else {
+                    displayResults(data);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading-overlay').classList.remove('active');
+                document.getElementById('analyze-button').disabled = false;
+                showNotification('error', '오류 발생', '서버와 통신할 수 없습니다.');
+            });
+        }
+
+        function displayResults(data) {
+            const isFrontal = data.is_frontal !== false;
+            let html = '';
+
+            if (isFrontal) {
+                html = `
+                    <div class="measurement-item">
+                        <div class="measurement-label">동공-구열 거리</div>
+                        <div class="measurement-value">${data.pupil_to_mouth || '-'}<span class="measurement-unit">px</span></div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-label">비저부-턱끝 거리</div>
+                        <div class="measurement-value">${data.nose_to_chin || '-'}<span class="measurement-unit">px</span></div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-label">Willis 비율</div>
+                        <div class="measurement-value">${data.ratio || '-'}</div>
+                    </div>
+                `;
+
+                const classification = data.classification || '';
+                let badgeClass = 'normal';
+                let icon = '✓';
+
+                if (classification.includes('평균 이하') || classification.includes('감소')) {
+                    badgeClass = 'below';
+                    icon = '⚠';
+                } else if (classification.includes('평균 이상')) {
+                    badgeClass = 'above';
+                    icon = '!';
+                }
+
+                html += `<div class="result-badge ${badgeClass}"><span>${icon}</span> ${classification}</div>`;
+            } else {
+                html = `
+                    <div class="measurement-item">
+                        <div class="measurement-label">측면 비율</div>
+                        <div class="measurement-value">${data.lateral_ratio || data.jaw_prominence || '-'}</div>
+                    </div>
+                    <div class="measurement-item">
+                        <div class="measurement-label">턱 각도</div>
+                        <div class="measurement-value">${data.chin_angle || '-'}<span class="measurement-unit">°</span></div>
+                    </div>
+                    <div class="result-badge normal"><span>ℹ</span> ${data.classification || '측면 분석'}</div>
+                `;
+            }
+
+            document.getElementById('results-content').innerHTML = html;
+        }
+
+        function showEmptyState() {
+            document.getElementById('results-content').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <div>사진을 업로드하고<br>분석을 시작하세요</div>
+                </div>
+            `;
+        }
+
+        // Camera Mode
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720, facingMode: 'user' } 
+                });
+
+                const video = document.getElementById('video-stream');
+                const overlay = document.getElementById('overlay-canvas');
+                
+                video.srcObject = videoStream;
+                video.classList.add('active');
+                
+                video.addEventListener('loadedmetadata', () => {
+                    overlay.width = video.videoWidth;
+                    overlay.height = video.videoHeight;
+                });
+
+                document.getElementById('start-camera').style.display = 'none';
+                document.getElementById('stop-camera').style.display = 'block';
+                document.getElementById('live-stats-panel').classList.add('active');
+
+                startCameraUpdate();
+            } catch (error) {
+                showNotification('error', '카메라 접근 실패', '카메라 권한을 확인해주세요.');
+            }
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+
+            document.getElementById('video-stream').classList.remove('active');
+            document.getElementById('start-camera').style.display = 'block';
+            document.getElementById('stop-camera').style.display = 'none';
+            document.getElementById('live-stats-panel').classList.remove('active');
+
+            if (cameraUpdateInterval) {
+                clearInterval(cameraUpdateInterval);
+                cameraUpdateInterval = null;
+            }
+        }
+
+        function startCameraUpdate() {
+            if (cameraUpdateInterval) return;
+
+            cameraUpdateInterval = setInterval(async () => {
+                const canvas = document.getElementById('capture-canvas');
+                const video = document.getElementById('video-stream');
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                const frameData = canvas.toDataURL('image/jpeg', 0.3);
+
+                try {
+                    const response = await fetch('/analyze_frame', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ frame: frameData })
+                    });
+
+                    const data = await response.json();
+                    if (data.error) return;
+
+                    document.getElementById('live-pupil-mouth').innerHTML = `${data.pupil_to_mouth || '-'}<span class="measurement-unit">px</span>`;
+                    document.getElementById('live-nose-chin').innerHTML = `${data.nose_to_chin || '-'}<span class="measurement-unit">px</span>`;
+                    document.getElementById('live-ratio').textContent = data.ratio || '-';
+
+                    const classification = data.classification || '';
+                    let badgeClass = 'normal';
+                    let icon = '✓';
+
+                    if (classification.includes('평균 이하')) {
+                        badgeClass = 'below';
+                        icon = '⚠';
+                    } else if (classification.includes('평균 이상')) {
+                        badgeClass = 'above';
+                        icon = '!';
+                    }
+
+                    if (classification !== '대기 중') {
+                        document.getElementById('live-classification').innerHTML = `
+                            <div class="result-badge ${badgeClass}" style="margin-top: 12px;">
+                                <span>${icon}</span> ${classification}
+                            </div>
+                        `;
+                    }
+
+                    if (data.landmarks && data.all_landmarks) {
+                        drawLandmarks(data.landmarks, data.all_landmarks);
+                    }
+                } catch (error) {
+                    console.error('분석 오류:', error);
+                }
+            }, 300);
+        }
+
+        function drawLandmarks(landmarks, allLandmarks) {
+            const canvas = document.getElementById('overlay-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Willis 주요 점
+            ctx.fillStyle = 'rgb(255, 255, 0)';
+            [landmarks.pupil_center, landmarks.mouth_center, landmarks.nose_point, landmarks.chin_point, landmarks.left_pupil, landmarks.right_pupil].forEach(pt => {
+                ctx.beginPath();
+                ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
+                ctx.fill();
             });
 
-            const data = await response.json();
+            // 측정선
+            ctx.strokeStyle = 'rgb(255, 0, 0)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(landmarks.pupil_center[0], landmarks.pupil_center[1]);
+            ctx.lineTo(landmarks.mouth_center[0], landmarks.mouth_center[1]);
+            ctx.stroke();
 
-            if (data.error) {
-              document.getElementById("camera-status").textContent = data.error;
-              clearLandmarks(); // 에러 시 랜드마크 지우기
-              return;
-            }
-
-            document.getElementById("camera-pupil-mouth").textContent =
-              data.pupil_to_mouth + " px";
-            document.getElementById("camera-nose-chin").textContent =
-              data.nose_to_chin + " px";
-            document.getElementById("camera-ratio").textContent = data.ratio;
-
-            const statusElement = document.getElementById("camera-status");
-            statusElement.textContent = "판정: " + data.classification;
-
-            statusElement.className = "status";
-            if (data.classification === "정상") {
-              statusElement.classList.add("normal");
-            } else if (data.classification.includes("평균 이하")) {
-              statusElement.classList.add("below");
-            } else if (data.classification.includes("평균 이상")) {
-              statusElement.classList.add("above");
-            }
-
-            // 랜드마크 그리기
-            if (data.landmarks && data.all_landmarks) {
-              drawLandmarks(data.landmarks, data.all_landmarks);
-            }
-          } catch (error) {
-            console.error("분석 오류:", error);
-          }
-        }, 300); // 실시간 응답: 0.3초마다 업데이트
-      }
-
-      function stopCameraUpdate() {
-        if (cameraUpdateInterval) {
-          clearInterval(cameraUpdateInterval);
-          cameraUpdateInterval = null;
-        }
-      }
-
-      function clearLandmarks() {
-        const overlayCanvas = document.getElementById("overlay-canvas");
-        if (!overlayCanvas) return;
-        const ctx = overlayCanvas.getContext("2d");
-        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-      }
-
-      function handleDragOver(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.target.closest(".upload-area").classList.add("dragover");
-      }
-
-      function drawLandmarks(landmarks, allLandmarks) {
-        const overlayCanvas = document.getElementById("overlay-canvas");
-        if (!overlayCanvas) return;
-
-        const ctx = overlayCanvas.getContext("2d");
-        ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-
-        // 성능 최적화: 468개 랜드마크 표시 비활성화 (필요시 주석 해제)
-        // if (allLandmarks && allLandmarks.length > 0) {
-        //   ctx.fillStyle = "rgba(0, 255, 0, 0.5)";
-        //   allLandmarks.forEach((pt) => {
-        //     ctx.beginPath();
-        //     ctx.arc(pt[0], pt[1], 1, 0, 2 * Math.PI);
-        //     ctx.fill();
-        //   });
-        // }
-
-        // Willis 주요 점 그리기 (큰 점)
-        ctx.fillStyle = "rgb(255, 255, 0)";
-        const points = [
-          landmarks.pupil_center,
-          landmarks.mouth_center,
-          landmarks.nose_point,
-          landmarks.chin_point,
-          landmarks.left_pupil,
-          landmarks.right_pupil,
-        ];
-
-        points.forEach((pt) => {
-          ctx.beginPath();
-          ctx.arc(pt[0], pt[1], 5, 0, 2 * Math.PI);
-          ctx.fill();
-        });
-
-        // Willis 측정선 그리기
-        // 동공-구열 선 (빨간색)
-        ctx.strokeStyle = "rgb(255, 0, 0)";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(landmarks.pupil_center[0], landmarks.pupil_center[1]);
-        ctx.lineTo(landmarks.mouth_center[0], landmarks.mouth_center[1]);
-        ctx.stroke();
-
-        // 비저부-턱끝 선 (빨간색)
-        ctx.strokeStyle = "rgb(0, 255, 0)";
-        ctx.beginPath();
-        ctx.moveTo(landmarks.nose_point[0], landmarks.nose_point[1]);
-        ctx.lineTo(landmarks.chin_point[0], landmarks.chin_point[1]);
-        ctx.stroke();
-      }
-
-      function handleDragLeave(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.target.closest(".upload-area").classList.remove("dragover");
-      }
-
-      function handleDrop(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.target.closest(".upload-area").classList.remove("dragover");
-
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-          handleFile(files[0]);
-        }
-      }
-
-      function handleFileSelect(e) {
-        const files = e.target.files;
-        if (files.length > 0) {
-          handleFile(files[0]);
-        }
-      }
-
-      function handleFile(file) {
-        if (!file.type.startsWith("image/")) {
-          alert("이미지 파일만 업로드 가능합니다.");
-          return;
+            ctx.strokeStyle = 'rgb(0, 255, 0)';
+            ctx.beginPath();
+            ctx.moveTo(landmarks.nose_point[0], landmarks.nose_point[1]);
+            ctx.lineTo(landmarks.chin_point[0], landmarks.chin_point[1]);
+            ctx.stroke();
         }
 
-        selectedFile = file;
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          document.getElementById("preview-image").src = e.target.result;
-          document.getElementById("preview-container").style.display = "block";
-          document.getElementById("upload-results").style.display = "none";
-        };
-        reader.readAsDataURL(file);
-      }
-
-      function analyzeUploadedImage() {
-        if (!selectedFile) {
-          alert("파일을 먼저 선택하세요.");
-          return;
+        function showNotification(type, title, message) {
+            const notification = document.getElementById('notification');
+            notification.className = `notification ${type} active`;
+            document.getElementById('notification-title').textContent = title;
+            document.getElementById('notification-message').textContent = message;
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 5000);
         }
-
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-
-        document.getElementById("loading").classList.add("active");
-        document.getElementById("upload-results").style.display = "none";
-
-        fetch("/analyze", {
-          method: "POST",
-          body: formData,
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            document.getElementById("loading").classList.remove("active");
-
-            if (data.error) {
-              alert("분석 실패: " + data.error);
-              return;
-            }
-
-            // 결과 제목 업데이트
-            document.getElementById("result-title").textContent =
-              "" + data.analysis_type;
-
-            if (data.is_frontal) {
-              // 정면 분석 결과 표시
-              document.getElementById("frontal-results").style.display =
-                "block";
-              document.getElementById("profile-results").style.display = "none";
-
-              document.getElementById("upload-pupil-mouth").textContent =
-                data.pupil_to_mouth + " px";
-              document.getElementById("upload-nose-chin").textContent =
-                data.nose_to_chin + " px";
-              document.getElementById("upload-ratio").textContent = data.ratio;
-              document.getElementById("upload-symmetry").textContent =
-                data.symmetry + "%";
-
-              const statusElement = document.getElementById("upload-status");
-              statusElement.textContent = "판정: " + data.classification;
-
-              statusElement.className = "status";
-              if (data.classification === "정상") {
-                statusElement.classList.add("normal");
-              } else if (data.classification.includes("평균 이하")) {
-                statusElement.classList.add("below");
-              } else if (data.classification.includes("평균 이상")) {
-                statusElement.classList.add("above");
-              }
-            } else {
-              // 측면 분석 결과 표시
-              document.getElementById("frontal-results").style.display = "none";
-              document.getElementById("profile-results").style.display =
-                "block";
-
-              document.getElementById("upload-lateral-ratio").textContent =
-                data.lateral_ratio;
-              document.getElementById("upload-profile-nose-chin").textContent =
-                data.nose_to_chin + " px";
-              document.getElementById("upload-eye-chin").textContent =
-                data.eye_to_chin + " px";
-              document.getElementById("upload-chin-angle").textContent =
-                data.chin_angle + "°";
-              document.getElementById("upload-naturalness").textContent =
-                data.naturalness;
-
-              const statusElement = document.getElementById("upload-status");
-              statusElement.textContent = "평가: " + data.classification;
-
-              statusElement.className = "status";
-              if (data.naturalness === "양호") {
-                statusElement.classList.add("normal");
-              } else {
-                statusElement.classList.add("below");
-              }
-            }
-
-            document.getElementById("upload-results").style.display = "block";
-          })
-          .catch((error) => {
-            document.getElementById("loading").classList.remove("active");
-            alert("분석 중 오류가 발생했습니다: " + error);
-          });
-      }
     </script>
-  </body>
+</body>
 </html>
