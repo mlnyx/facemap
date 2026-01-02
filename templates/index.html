@@ -999,10 +999,12 @@
                 video.classList.add('active');
                 
                 video.addEventListener('loadedmetadata', () => {
-                    // 캔버스를 비디오의 실제 표시 크기에 맞춤
+                    // 캔버스를 비디오 원본 해상도로 설정
+                    overlay.width = video.videoWidth;
+                    overlay.height = video.videoHeight;
+                    
+                    // CSS로 비디오와 동일한 표시 크기 적용
                     const rect = video.getBoundingClientRect();
-                    overlay.width = rect.width;
-                    overlay.height = rect.height;
                     overlay.style.width = rect.width + 'px';
                     overlay.style.height = rect.height + 'px';
                 });
@@ -1101,19 +1103,15 @@
             console.log('Video size:', video.videoWidth, 'x', video.videoHeight);
             console.log('All landmarks count:', allLandmarks ? allLandmarks.length : 0);
 
-            // 서버에서 받은 좌표는 원본 비디오 해상도 기준
-            // 캔버스는 표시 크기 기준이므로 스케일 조정 필요
-            const scaleX = canvas.width / video.videoWidth;
-            const scaleY = canvas.height / video.videoHeight;
-
-            console.log('Scale:', scaleX, scaleY);
+            // 캔버스와 비디오가 같은 원본 해상도이므로 스케일 1:1
+            // 서버에서 받은 좌표를 그대로 사용
 
             // 모든 랜드마크 468개 점 (회색, 작게)
             if (allLandmarks && allLandmarks.length > 0) {
                 ctx.fillStyle = 'rgba(200, 200, 200, 0.5)';
                 allLandmarks.forEach(pt => {
                     ctx.beginPath();
-                    ctx.arc(pt[0] * scaleX, pt[1] * scaleY, 1.5, 0, 2 * Math.PI);
+                    ctx.arc(pt[0], pt[1], 2, 0, 2 * Math.PI);
                     ctx.fill();
                 });
             }
@@ -1122,22 +1120,22 @@
             ctx.fillStyle = 'rgb(255, 255, 0)';
             [landmarks.pupil_center, landmarks.mouth_center, landmarks.nose_point, landmarks.chin_point, landmarks.left_pupil, landmarks.right_pupil].forEach(pt => {
                 ctx.beginPath();
-                ctx.arc(pt[0] * scaleX, pt[1] * scaleY, 5, 0, 2 * Math.PI);
+                ctx.arc(pt[0], pt[1], 6, 0, 2 * Math.PI);
                 ctx.fill();
             });
 
             // 측정선
             ctx.strokeStyle = 'rgb(255, 0, 0)';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 4;
             ctx.beginPath();
-            ctx.moveTo(landmarks.pupil_center[0] * scaleX, landmarks.pupil_center[1] * scaleY);
-            ctx.lineTo(landmarks.mouth_center[0] * scaleX, landmarks.mouth_center[1] * scaleY);
+            ctx.moveTo(landmarks.pupil_center[0], landmarks.pupil_center[1]);
+            ctx.lineTo(landmarks.mouth_center[0], landmarks.mouth_center[1]);
             ctx.stroke();
 
             ctx.strokeStyle = 'rgb(0, 255, 0)';
             ctx.beginPath();
-            ctx.moveTo(landmarks.nose_point[0] * scaleX, landmarks.nose_point[1] * scaleY);
-            ctx.lineTo(landmarks.chin_point[0] * scaleX, landmarks.chin_point[1] * scaleY);
+            ctx.moveTo(landmarks.nose_point[0], landmarks.nose_point[1]);
+            ctx.lineTo(landmarks.chin_point[0], landmarks.chin_point[1]);
             ctx.stroke();
         }
 
