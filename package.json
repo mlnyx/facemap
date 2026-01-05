@@ -1,0 +1,12 @@
+{
+  "name": "facemap-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "yarn@4.12.0"
+}

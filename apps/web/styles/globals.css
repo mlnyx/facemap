@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+	height: 100%;
+	font-family: 'SF Pro Display', 'Apple SD Gothic Neo', 'Segoe UI', 'Roboto', 'Noto Sans KR', sans-serif;
+}

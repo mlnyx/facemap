@@ -35,3 +35,19 @@ Thumbs.db
 # Sensitive files
 .env
 *.pdf
+
+# Node.js
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Yarn (keep .pnp.cjs for zero-installs)
+.yarn/install-state.gz
+.yarn/unplugged/
+.yarn/build-state.yml
+
+# Build outputs
+dist/
+*.tsbuildinfo
