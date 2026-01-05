@@ -134,27 +134,59 @@ export default function Camera() {
   }, []);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#e0e6ef] to-[#f8fafc]">
-      <div className="backdrop-blur-xl bg-white/60 rounded-3xl shadow-xl px-8 py-12 flex flex-col items-center w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-900">실시간 카메라</h2>
-        {error && <div className="text-red-500 mb-2">{error}</div>}
-        <div className="relative w-full max-w-xs mb-4">
-          <video ref={videoRef} autoPlay playsInline className="rounded-xl w-full" width={320} height={240} style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }} />
-          <canvas ref={canvasRef} width={320} height={240} className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 2 }} />
-        </div>
-        <div className="text-blue-600 font-semibold mb-2">{guide}</div>
-        {result && (
-          <div className="text-center">
-            <div className={`text-lg font-semibold ${result === '정상 비율' ? 'text-green-600' : 'text-red-600'}`}>
-              {result}
-            </div>
-            {ratio !== null && (
-              <div className="text-sm text-gray-600 mt-1">
-                Willis 비율: {ratio.toFixed(3)}
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#e0e6ef] to-[#f8fafc] p-4">
+      <div className="backdrop-blur-xl bg-white/60 rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col items-center w-full max-w-sm">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center text-gray-900">실시간 카메라</h2>
+        {error && <div className="text-red-500 mb-2 text-sm">{error}</div>}
+
+        {/* 비디오 컨테이너 - 4:3 비율 유지 */}
+        <div className="relative w-full aspect-[4/3] mb-3 rounded-xl overflow-hidden bg-black">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <canvas
+            ref={canvasRef}
+            width={320}
+            height={240}
+            className="absolute inset-0 w-full h-full pointer-events-none"
+          />
+
+          {/* 결과 오버레이 - 비디오 하단에 표시 */}
+          <div className="absolute bottom-0 left-0 right-0 bg-black/50 backdrop-blur-sm p-2 text-center">
+            <div className="text-white text-sm font-medium">{guide}</div>
+            {result && (
+              <div className="flex items-center justify-center gap-2 mt-1">
+                <span className={`text-sm font-bold ${result === '정상 비율' ? 'text-green-400' : 'text-red-400'}`}>
+                  {result}
+                </span>
+                {ratio !== null && (
+                  <span className="text-white/80 text-xs">
+                    ({ratio.toFixed(2)})
+                  </span>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
+
+        {/* 범례 */}
+        <div className="flex flex-wrap justify-center gap-2 text-xs text-gray-600">
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-green-500"></span> 동공
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span> 비저부
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-red-500"></span> 구열
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-violet-500"></span> 턱끝
+          </span>
+        </div>
       </div>
     </main>
   );
