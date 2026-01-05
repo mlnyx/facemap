@@ -51,3 +51,4 @@ out/
 # Build outputs
 dist/
 *.tsbuildinfo
+.vercel
