@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./cloudflared.exe tunnel create:*)",
+      "Bash(./cloudflared.exe tunnel login:*)"
+    ]
+  }
+}
