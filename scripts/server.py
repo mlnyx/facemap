@@ -209,10 +209,9 @@ def main():
     log("=" * 60)
     log("Willis Facemap 통합 서버 v2.0")
     log("=" * 60)
-    log(f"• 모드: {'Named Tunnel (고정 URL)' if USE_NAMED_TUNNEL else 'Quick Tunnel (임시 URL)'}")
     log(f"• 포트: {PORT}")
     log(f"• GitHub 변경사항 {CHECK_INTERVAL}초마다 확인")
-    log("• 변경 감지 시 자동 빌드 & 재시작")
+    log("• 변경 감지 시 서버만 재시작 (터널 URL 유지!)")
     log("• Ctrl+C로 종료")
     log("=" * 60)
 
@@ -241,7 +240,7 @@ def main():
                 if pull_updates():
                     restart_server()
                     log("=" * 60)
-                    log("🎉 업데이트 적용 완료!")
+                    log("🎉 업데이트 적용 완료! (터널 URL 유지됨)")
                     log("=" * 60)
             else:
                 log(f"✓ 최신 상태")
