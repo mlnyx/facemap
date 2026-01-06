@@ -36,6 +36,12 @@ Thumbs.db
 .env
 *.pdf
 
+# Cloudflare Tunnel
+cloudflared.exe
+cloudflared
+TUNNEL_URL.txt
+extracted_*.txt
+
 # Node.js
 node_modules/
 

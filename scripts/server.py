@@ -1,9 +1,15 @@
 """
-Willis Facemap 통합 서버 스크립트
+Willis Facemap 통합 서버 스크립트 v2.0
 
 - Next.js 서버 실행
-- Cloudflare Tunnel (Named Tunnel로 고정 URL)
+- Cloudflare Tunnel (Named Tunnel 또는 Quick Tunnel)
 - GitHub 자동 감지 + 자동 재시작
+
+환경변수:
+  USE_NAMED_TUNNEL: 'true'면 Named Tunnel 사용 (기본: Quick Tunnel)
+  TUNNEL_NAME: Named Tunnel 이름 (기본: facemap)
+  PORT: Next.js 포트 (기본: 3000)
+  CHECK_INTERVAL: 업데이트 확인 주기 초 (기본: 30)
 """
 
 import subprocess
@@ -13,10 +19,14 @@ import os
 import signal
 from datetime import datetime
 
-# 설정
-CHECK_INTERVAL = 30  # 초
-TUNNEL_NAME = "facemap"  # Cloudflare Named Tunnel 이름
-PORT = 3000
+# 설정 (환경변수로 오버라이드 가능)
+CHECK_INTERVAL = int(os.environ.get('CHECK_INTERVAL', 30))
+TUNNEL_NAME = os.environ.get('TUNNEL_NAME', 'facemap')
+PORT = int(os.environ.get('PORT', 3000))
+USE_NAMED_TUNNEL = os.environ.get('USE_NAMED_TUNNEL', 'false').lower() == 'true'
+
+# 프로젝트 루트 경로 (scripts/ 폴더의 상위)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 프로세스 관리
 server_process = None
@@ -106,49 +116,77 @@ def stop_server():
 
 def start_tunnel():
     global tunnel_process
-    log("🌐 Cloudflare Tunnel 시작...")
 
-    # cloudflared 경로 (프로젝트 폴더 또는 시스템)
-    cloudflared_path = './cloudflared.exe' if os.path.exists('./cloudflared.exe') else 'cloudflared'
+    # cloudflared 경로 (프로젝트 루트 또는 시스템)
+    cloudflared_in_root = os.path.join(PROJECT_ROOT, 'cloudflared.exe')
+    cloudflared_path = cloudflared_in_root if os.path.exists(cloudflared_in_root) else 'cloudflared'
 
     try:
-        tunnel_process = subprocess.Popen(
-            [cloudflared_path, 'tunnel', '--url', f'http://localhost:{PORT}'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
-        )
+        if USE_NAMED_TUNNEL:
+            # Named Tunnel 모드 (고정 URL)
+            log(f"🌐 Cloudflare Named Tunnel 시작 (터널: {TUNNEL_NAME})...")
+            tunnel_process = subprocess.Popen(
+                [cloudflared_path, 'tunnel', 'run', TUNNEL_NAME],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
 
-        # URL 감지 스레드 시작
-        import threading
-        def watch_tunnel_output():
-            url_file = os.path.join(os.path.dirname(__file__), 'TUNNEL_URL.txt')
-            for line in tunnel_process.stdout:
-                print(f"[Tunnel] {line.strip()}")
-                # URL 감지
-                if 'trycloudflare.com' in line:
-                    import re
-                    match = re.search(r'https://[a-z0-9-]+\.trycloudflare\.com', line)
-                    if match:
-                        url = match.group(0)
-                        log("=" * 60)
-                        log(f"🌍 터널 URL: {url}")
-                        log("=" * 60)
-                        # 파일에 저장
-                        with open(url_file, 'w') as f:
-                            f.write(url)
-                        log(f"📄 URL이 TUNNEL_URL.txt에 저장됨")
+            # Named Tunnel 출력 감시
+            import threading
+            def watch_named_tunnel():
+                for line in tunnel_process.stdout:
+                    print(f"[Tunnel] {line.strip()}")
 
-        thread = threading.Thread(target=watch_tunnel_output, daemon=True)
-        thread.start()
+            thread = threading.Thread(target=watch_named_tunnel, daemon=True)
+            thread.start()
+
+            time.sleep(5)
+            log("=" * 60)
+            log(f"🌍 Named Tunnel '{TUNNEL_NAME}' 시작됨")
+            log("   config.yml에 설정된 hostname으로 접속하세요")
+            log("=" * 60)
+        else:
+            # Quick Tunnel 모드 (임시 URL)
+            log("🌐 Cloudflare Quick Tunnel 시작...")
+            tunnel_process = subprocess.Popen(
+                [cloudflared_path, 'tunnel', '--url', f'http://localhost:{PORT}'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+
+            # URL 감지 스레드 시작
+            import threading
+            def watch_tunnel_output():
+                url_file = os.path.join(PROJECT_ROOT, 'TUNNEL_URL.txt')
+                for line in tunnel_process.stdout:
+                    print(f"[Tunnel] {line.strip()}")
+                    # URL 감지
+                    if 'trycloudflare.com' in line:
+                        import re
+                        match = re.search(r'https://[a-z0-9-]+\.trycloudflare\.com', line)
+                        if match:
+                            url = match.group(0)
+                            log("=" * 60)
+                            log(f"🌍 터널 URL: {url}")
+                            log("=" * 60)
+                            # 파일에 저장
+                            with open(url_file, 'w') as f:
+                                f.write(url)
+                            log(f"📄 URL이 TUNNEL_URL.txt에 저장됨")
+
+            thread = threading.Thread(target=watch_tunnel_output, daemon=True)
+            thread.start()
+            time.sleep(8)
+
+        log("✅ Tunnel 시작됨")
 
     except FileNotFoundError:
         log("❌ cloudflared가 설치되어 있지 않습니다")
         return
-
-    time.sleep(8)
-    log("✅ Tunnel 시작됨")
 
 def restart_server():
     stop_server()
@@ -169,8 +207,10 @@ def main():
         signal.signal(signal.SIGTERM, cleanup)
 
     log("=" * 60)
-    log("Willis Facemap 통합 서버")
+    log("Willis Facemap 통합 서버 v2.0")
     log("=" * 60)
+    log(f"• 모드: {'Named Tunnel (고정 URL)' if USE_NAMED_TUNNEL else 'Quick Tunnel (임시 URL)'}")
+    log(f"• 포트: {PORT}")
     log(f"• GitHub 변경사항 {CHECK_INTERVAL}초마다 확인")
     log("• 변경 감지 시 자동 빌드 & 재시작")
     log("• Ctrl+C로 종료")
@@ -212,7 +252,8 @@ def main():
         cleanup()
 
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # 프로젝트 루트로 작업 디렉토리 변경
+    os.chdir(PROJECT_ROOT)
 
     # Git 확인
     if not os.path.exists('.git'):
